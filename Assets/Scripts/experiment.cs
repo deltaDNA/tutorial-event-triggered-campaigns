@@ -15,8 +15,12 @@ public class experiment : MonoBehaviour {
     void Start () {
 
         DDNA.Instance.SetLoggingLevel(DeltaDNA.Logger.Level.DEBUG);
-        DDNA.Instance.StartSDK();
+        
+        // Allow multiple game parameter actions callbacks from a single event trigger        
+        DDNA.Instance.Settings.MultipleActionsForEventTriggerEnabled = true; 
 
+        DDNA.Instance.StartSDK();
+        
         UpdateHud();
     }
 	

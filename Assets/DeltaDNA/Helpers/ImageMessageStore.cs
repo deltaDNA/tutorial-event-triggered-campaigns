@@ -42,10 +42,9 @@ namespace DeltaDNA {
         }
 
         #if UNITY_EDITOR
-        internal ImageMessageStore() {
-            parent = null;
-        }
+        internal ImageMessageStore() : this(null) {}
         #endif
+
 
         internal virtual bool Has(string url) {
             return Directory
@@ -116,7 +115,7 @@ namespace DeltaDNA {
         }
 
         internal void Clear() {
-            Directory.Delete(cache);
+            if (Directory.Exists(cache)) Directory.Delete(cache, true);
         }
 
         private IEnumerator Fetch(string url, Action<Texture2D> onSuccess, Action<string> onError) {

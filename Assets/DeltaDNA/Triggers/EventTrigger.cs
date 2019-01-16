@@ -37,6 +37,10 @@ namespace DeltaDNA {
         private readonly long campaignId;
         private readonly long variantId;
 
+        
+        private readonly string campaignName;
+        private readonly string variantName; 
+
         private int runs;
 
         internal EventTrigger(DDNABase ddna, int index, JSONObject json) {
@@ -50,24 +54,20 @@ namespace DeltaDNA {
                 ? json["response"] as JSONObject
                 : new JSONObject();
 
-            priority = json.ContainsKey("priority")
-                ? json["priority"] as long? ?? 0
-                : 0;
-            limit = json.ContainsKey("limit")
-                ? json["limit"] as long? ?? -1
-                : -1;
+            priority = json.GetOrDefault("priority", 0L);
+            limit = json.GetOrDefault("limit", -1L);
             condition = (json.ContainsKey("condition")
                 ? json["condition"] as List<object>
                 : new List<object>(0))
                 .Select(e => e as JSONObject)
                 .ToArray();
 
-            campaignId = json.ContainsKey("campaignID")
-                ? json["campaignID"] as long? ?? -1
-                : -1;
-            variantId = json.ContainsKey("variantID")
-                ? json["variantID"] as long? ?? -1
-                : -1;
+            campaignId = json.GetOrDefault("campaignID", -1L);
+            variantId = json.GetOrDefault("variantID", -1L);
+            var eventParams = response.GetOrDefault("eventParams", new JSONObject());
+
+            campaignName = eventParams.GetOrDefault<string, string>("responseEngagementName", null);
+            variantName =  eventParams.GetOrDefault<string, string>("responseVariantName", null);
 
         }
 
@@ -88,6 +88,10 @@ namespace DeltaDNA {
 
         internal virtual JSONObject GetResponse() {
             return response;
+        }
+
+        internal virtual long GetCampaignId() {
+            return campaignId;
         }
 
         internal virtual bool Evaluate(GameEvent evnt) {
@@ -206,12 +210,24 @@ namespace DeltaDNA {
             var result = stack.Count == 0 || (stack.Pop() as bool? ?? false);
             if (result) {
                 runs++;
-                ddna.RecordEvent(new GameEvent("ddnaEventTriggeredAction")
+                var eventTriggeredActionEvent = new GameEvent("ddnaEventTriggeredAction")
                     .AddParam("ddnaEventTriggeredCampaignID", campaignId)
                     .AddParam("ddnaEventTriggeredCampaignPriority", priority)
                     .AddParam("ddnaEventTriggeredVariantID", variantId)
                     .AddParam("ddnaEventTriggeredActionType", GetAction())
-                    .AddParam("ddnaEventTriggeredSessionCount", runs));
+                    .AddParam("ddnaEventTriggeredSessionCount", runs);
+                
+                if (campaignName != null)
+                {
+                    eventTriggeredActionEvent.AddParam("ddnaEventTriggeredCampaignName", campaignName);
+                }
+                if (variantName != null)
+                {
+                    eventTriggeredActionEvent.AddParam("ddnaEventTriggeredVariantName", variantName);
+                }
+
+                ddna.RecordEvent(eventTriggeredActionEvent);
+
             }
             return result;
         }
