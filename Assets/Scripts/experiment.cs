@@ -7,31 +7,67 @@ using DeltaDNA;
 public class experiment : MonoBehaviour {
 
     public Text lblUnityVersion;
-    public Text lbldDdnaVersion;
+    public Text lblDdnaVersion;
     public Text lblDevice;
     public Text lblOperatingSystem;
+    public Text lblUserLevel; 
+    private int userLevel = 1; 
 
     // Use this for initialization
     void Start () {
 
         DDNA.Instance.SetLoggingLevel(DeltaDNA.Logger.Level.DEBUG);
-        
+
+        // Hook up callback to fire when DDNA SDK has received session config info, including Event Triggered campaigns.
+        DDNA.Instance.NotifyOnSessionConfigured(true);
+        DDNA.Instance.OnSessionConfigured += (bool cachedConfig) => GetGameConfig(cachedConfig);
+
         // Allow multiple game parameter actions callbacks from a single event trigger        
         DDNA.Instance.Settings.MultipleActionsForEventTriggerEnabled = true; 
 
         DDNA.Instance.StartSDK();
-        
         UpdateHud();
+
     }
 	
     private void UpdateHud()
     {
         lblUnityVersion.text = "Unity version : " + Application.unityVersion;
-        lbldDdnaVersion.text = "DDNA Version : " + Settings.SDK_VERSION;
+        lblDdnaVersion.text = "DDNA Version : " + Settings.SDK_VERSION;
 
-        lblDevice.text = SystemInfo.deviceModel + " ( " + SystemInfo.deviceType + " )";
-        lblOperatingSystem.text = SystemInfo.operatingSystem.ToString(); 
+        lblDevice.text = "Device : " + SystemInfo.deviceModel + " ( " + SystemInfo.deviceType + " )";
+        lblOperatingSystem.text = "Operating System : " + SystemInfo.operatingSystem.ToString();
+        lblUserLevel.text = "User Level : " + userLevel.ToString();
     }
+
+
+    // The callback indicating that the deltaDNA has downloaded its session configuration, including 
+    // Event Triggered Campaign actions and logic, is used to record a "sdkConfigured" event 
+    // that can be used provision remotely configured parameters. 
+    // i.e. deferring the game session config until it knows it has received any info it might need
+    public void GetGameConfig(bool cachedConfig)
+    {
+        Debug.Log("Configuration Loaded, Cached =  "  +cachedConfig.ToString());
+        Debug.Log("Recording a sdkConfigured event for Event Triggered Campaign to react to");
+
+        // Create an sdkConfigured event object
+        var gameEvent = new GameEvent("sdkConfigured")
+            .AddParam("clientVersion", DDNA.Instance.ClientVersion)
+            .AddParam("userLevel",userLevel);
+
+        // Record sdkConfigured event and wire up handler callbacks
+        DDNA.Instance.RecordEvent(gameEvent)
+            .Add(new GameParametersHandler(gameParameters => {
+                // do something with the game parameters
+                myGameParameterHandler(gameParameters);
+            }))
+            .Add(new ImageMessageHandler(DDNA.Instance, imageMessage => {
+                // do something with the image message
+                myImageMessageHandler(imageMessage);
+            }))
+            .Run();
+    }
+
 
 
     public void missionStartedButtonClick()
@@ -98,7 +134,33 @@ public class experiment : MonoBehaviour {
 
     }
 
+    public void levelUpButtonClick()
+    {
+        // Clicking Button will record a missionCompleted event
+        // which may trigger a campaign
+        Debug.Log("Level Up Button Clicked");
+        userLevel++; 
 
+        // Create a missionCompleted event object
+        var gameEvent = new GameEvent("levelUp")
+            .AddParam("levelUpName", "Level " + userLevel.ToString())
+            .AddParam("userLevel", userLevel);
+
+
+        // Record missionCompleted event and wire up handler callbacks
+        DDNA.Instance.RecordEvent(gameEvent)
+            .Add(new GameParametersHandler(gameParameters => {
+                // do something with the game parameters
+                myGameParameterHandler(gameParameters);
+            }))
+            .Add(new ImageMessageHandler(DDNA.Instance, imageMessage => {
+                // do something with the image message
+                myImageMessageHandler(imageMessage);
+            }))
+            .Run();
+
+        UpdateHud();
+    }
 
     private void myGameParameterHandler(Dictionary<string, object> gameParameters)
     {
