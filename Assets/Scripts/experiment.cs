@@ -134,9 +134,14 @@ public class experiment : MonoBehaviour {
 
     }
 
+    public void newSessionButtonClick()
+    {
+        DDNA.Instance.NewSession();
+    }
+
     public void levelUpButtonClick()
     {
-        // Clicking Button will record a missionCompleted event
+        // Clicking Button will record a levelUp event
         // which may trigger a campaign
         Debug.Log("Level Up Button Clicked");
         userLevel++; 
