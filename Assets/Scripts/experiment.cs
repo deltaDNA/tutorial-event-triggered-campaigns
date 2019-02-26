@@ -23,7 +23,21 @@ public class experiment : MonoBehaviour {
         DDNA.Instance.OnSessionConfigured += (bool cachedConfig) => GetGameConfig(cachedConfig);
 
         // Allow multiple game parameter actions callbacks from a single event trigger        
-        DDNA.Instance.Settings.MultipleActionsForEventTriggerEnabled = true; 
+        DDNA.Instance.Settings.MultipleActionsForEventTriggerEnabled = true;
+
+        //Register default handlers for event triggered campaigns. These will be candidates for handling ANY Event-Triggered Campaigns. 
+        //Any handlers added to RegisterEvent() calls with the .Add method will be evaluated before these default handlers. 
+        DDNA.Instance.Settings.DefaultImageMessageHandler =
+            new ImageMessageHandler(DDNA.Instance, imageMessage => {
+                // do something with the image message
+                myImageMessageHandler(imageMessage);
+            });
+        DDNA.Instance.Settings.DefaultGameParameterHandler = new GameParametersHandler(gameParameters => {
+            // do something with the game parameters
+            myGameParameterHandler(gameParameters);
+        });
+
+
 
         DDNA.Instance.StartSDK();
         UpdateHud();
@@ -55,17 +69,8 @@ public class experiment : MonoBehaviour {
             .AddParam("clientVersion", DDNA.Instance.ClientVersion)
             .AddParam("userLevel",userLevel);
 
-        // Record sdkConfigured event and wire up handler callbacks
-        DDNA.Instance.RecordEvent(gameEvent)
-            .Add(new GameParametersHandler(gameParameters => {
-                // do something with the game parameters
-                myGameParameterHandler(gameParameters);
-            }))
-            .Add(new ImageMessageHandler(DDNA.Instance, imageMessage => {
-                // do something with the image message
-                myImageMessageHandler(imageMessage);
-            }))
-            .Run();
+        // Record sdkConfigured event and run default response hander
+        DDNA.Instance.RecordEvent(gameEvent).Run();
     }
 
 
@@ -87,16 +92,7 @@ public class experiment : MonoBehaviour {
             .AddParam("goldBalance", 999);
 
         // Record missionCompleted event and wire up handler callbacks
-        DDNA.Instance.RecordEvent(gameEvent)
-            .Add(new GameParametersHandler(gameParameters => {
-                // do something with the game parameters
-                myGameParameterHandler(gameParameters);
-            }))
-            .Add(new ImageMessageHandler(DDNA.Instance, imageMessage => {
-                // do something with the image message
-                myImageMessageHandler(imageMessage);
-            }))
-            .Run();
+        DDNA.Instance.RecordEvent(gameEvent).Run();
 
     }
 
@@ -119,18 +115,7 @@ public class experiment : MonoBehaviour {
 
 
         // Record missionCompleted event and wire up handler callbacks
-        DDNA.Instance.RecordEvent(gameEvent)
-            .Add(new GameParametersHandler(gameParameters => {
-                // do something with the game parameters
-                myGameParameterHandler(gameParameters);
-            }))
-            .Add(new ImageMessageHandler(DDNA.Instance, imageMessage => {
-                // do something with the image message
-                myImageMessageHandler(imageMessage);
-            }))
-            .Run();
-
-
+        DDNA.Instance.RecordEvent(gameEvent).Run();
 
     }
 
@@ -153,16 +138,7 @@ public class experiment : MonoBehaviour {
 
 
         // Record missionCompleted event and wire up handler callbacks
-        DDNA.Instance.RecordEvent(gameEvent)
-            .Add(new GameParametersHandler(gameParameters => {
-                // do something with the game parameters
-                myGameParameterHandler(gameParameters);
-            }))
-            .Add(new ImageMessageHandler(DDNA.Instance, imageMessage => {
-                // do something with the image message
-                myImageMessageHandler(imageMessage);
-            }))
-            .Run();
+        DDNA.Instance.RecordEvent(gameEvent).Run();
 
         UpdateHud();
     }
